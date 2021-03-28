@@ -54,8 +54,10 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState valueTree;
+    juce::AudioBuffer<float> getWaveform() { return waveform; }
 
-    void loadFile(int midiNote);
+    void loadFile();
+    void loadFileDragDrop(const juce::String& path);
     void updateFilter();
 
 private:
@@ -72,6 +74,8 @@ private:
 
     juce::ADSR::Parameters ADSRParams;
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
+    juce::AudioBuffer<float> waveform;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RSampler1AudioProcessor)
 };

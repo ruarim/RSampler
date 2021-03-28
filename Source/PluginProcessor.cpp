@@ -33,7 +33,7 @@ RSampler1AudioProcessor::RSampler1AudioProcessor()
 
 RSampler1AudioProcessor::~RSampler1AudioProcessor()
 {
-    rFormatReader = nullptr;
+    rSampler.clearSounds();
 }
 
 //==============================================================================
@@ -237,8 +237,11 @@ void RSampler1AudioProcessor::setStateInformation (const void* data, int sizeInB
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
-void RSampler1AudioProcessor::loadFile(int midiNote) //takes midi note to load sample for
+void RSampler1AudioProcessor::loadFile() //takes midi note to load sample for
 {
+    //clear old sounds to replace with new sound
+    rSampler.clearSounds();
+
     juce::FileChooser chooser{ "PLEASE LOAD FILE." };
 
     if (chooser.browseForFileToOpen())
@@ -251,9 +254,34 @@ void RSampler1AudioProcessor::loadFile(int midiNote) //takes midi note to load s
     //72 - 80 midinotes for pad sampler style
     juce::BigInteger range;
     //0 - 128 for full pitch range
-    range.setRange(midiNote, 1, true);
+    range.setRange(0, 128, true);
     
-    rSampler.addSound(new juce::SamplerSound("Sample", *rFormatReader, range, midiNote, 0.1, 0.1, 10)); //after range; ATTACK, RELEASE, MAXLENGTH
+    rSampler.addSound(new juce::SamplerSound("Sample", *rFormatReader, range, 60, 0.1, 0.1, 10)); //after range; ATTACK, RELEASE, MAXLENGTH
+    delete rFormatReader; //delete reader after sample read
+}
+void RSampler1AudioProcessor::loadFileDragDrop(const juce::String& path)
+{
+    rSampler.clearSounds();
+
+    auto file = juce::File(path);
+
+    rFormatReader = rFormatManager.createReaderFor(file);
+    int sampleLength = static_cast<int>(rFormatReader->lengthInSamples);
+
+    waveform.setSize(1, sampleLength);
+    rFormatReader->read(&waveform, 0, sampleLength, 0, true, false); //gives file in buffer , destinination buffer start from begining, lenght in sample, reader buffer start, take only one channel
+
+    auto buffer = waveform.getReadPointer(0);
+
+    //check waveform has content
+
+    juce::BigInteger range;
+
+    //0 - 128 for full pitch range
+    range.setRange(0, 128, true);
+
+    rSampler.addSound(new juce::SamplerSound("Sample", *rFormatReader, range, 60, 0.1, 0.1, 10)); //after range; ATTACK, RELEASE, MAXLENGTH
+    delete rFormatReader; //delete reader after sample read
 }
 juce::AudioProcessorValueTreeState::ParameterLayout RSampler1AudioProcessor::createParams()
 {
@@ -264,7 +292,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout RSampler1AudioProcessor::cre
     params.push_back(std::make_unique<juce::AudioParameterFloat>("SUSTAIN", "Sustain", juce::NormalisableRange<float>(0.0f, 5.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("RELEASE", "Release", juce::NormalisableRange<float>(0.0f, 5.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("CUTOFF", "Cutoff", juce::NormalisableRange<float>(20.0f, 20000.0f), 2000.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("CUTOFF", "Cutoff", juce::NormalisableRange<float>(20.0f, 20000.0f), 5000.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("RESO", "Resonance", juce::NormalisableRange<float>(0.1f, 10.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("FCHOICE", "FilterChoice", juce::NormalisableRange<float>(0, 2), 0));
     return{ params.begin(), params.end() }; //returns parameters list

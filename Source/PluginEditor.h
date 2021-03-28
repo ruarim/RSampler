@@ -17,7 +17,8 @@
 //==============================================================================
 /**
 */
-class RSampler1AudioProcessorEditor  : public juce::AudioProcessorEditor
+class RSampler1AudioProcessorEditor  : public juce::AudioProcessorEditor,
+                                       public juce::FileDragAndDropTarget
 {
 public:
     RSampler1AudioProcessorEditor (RSampler1AudioProcessor&);
@@ -27,22 +28,20 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int x, int y) override;
+    juce::Path displayWaveform();
+
 private:
     Envelope envGUI;
     Gain gainGUI;
     Filter filterGUI;
 
-    juce::TextButton sample1Button{ "LOAD SAMPLE \n KEY: C" };
-    juce::TextButton sample2Button{ "LOAD SAMPLE \n KEY: C#" };
-    juce::TextButton sample3Button{ "LOAD SAMPLE \n KEY: D" };
-    juce::TextButton sample4Button{ "LOAD SAMPLE \n KEY: D#" };
-    juce::TextButton sample5Button{ "LOAD SAMPLE \n KEY: E" };
-    juce::TextButton sample6Button{ "LOAD SAMPLE \n KEY: E#" };
-    //juce::TextButton sample7Button{ "LOAD SAMPLE \n KEY: F" };
-    //juce::TextButton sample8Button{ "LOAD SAMPLE \n KEY: F#" };
-    //juce::TextButton sample9Button{ "LOAD SAMPLE \n KEY: G" };
-    //juce::TextButton loadButton{ "LOAD SAMPLE" };
-    // This reference is provided as a quick way for your editor to
+    juce::TextButton sample1Button{ "LOAD SAMPLE" };
+
+    std::vector<float> audioPoints;
+    bool paintWaveform = false;
+    // This reference is provided as a quick way for the editor to
     // access the processor object that created it.
     RSampler1AudioProcessor& audioProcessor;
 
