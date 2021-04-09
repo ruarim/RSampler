@@ -6,6 +6,8 @@
               pluginFormats="buildVST3">
   <MAINGROUP id="kzpEae" name="RSampler1">
     <GROUP id="{CD0879C5-45C0-A358-2E82-8E60B7CD20CC}" name="Source">
+      <FILE id="fEXtV4" name="Reverb.cpp" compile="1" resource="0" file="Source/Reverb.cpp"/>
+      <FILE id="npARjf" name="Reverb.h" compile="0" resource="0" file="Source/Reverb.h"/>
       <FILE id="pcRU5g" name="Filter.cpp" compile="1" resource="0" file="Source/Filter.cpp"/>
       <FILE id="JNoQWX" name="Filter.h" compile="0" resource="0" file="Source/Filter.h"/>
       <FILE id="Yr3RW1" name="Gain.cpp" compile="1" resource="0" file="Source/Gain.cpp"/>

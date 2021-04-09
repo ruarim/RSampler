@@ -101,24 +101,29 @@ void RSampler1AudioProcessor::changeProgramName (int index, const juce::String& 
 //==============================================================================
 void RSampler1AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
+    // Use this method as the place to do any pre-playback  
     // initialisation that you need..
 
     lastSampleRate = sampleRate;
 
     rSampler.setCurrentPlaybackSampleRate(sampleRate);
 
-    //create current spec
+    //create dsp spec
     juce::dsp::ProcessSpec spec; 
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
     spec.numChannels = getMainBusNumOutputChannels();
 
+    stateVariableFilter.prepare(spec);
+    reverb.setSampleRate(sampleRate);
     //make sure filter doesnt contain irrelevant values
     stateVariableFilter.reset();
+    reverb.reset();
+
     //setup filter 
     updateFilter();
-    stateVariableFilter.prepare(spec);
+    updateReverb();
+
 }
 void RSampler1AudioProcessor::updateFilter()
 {
@@ -138,6 +143,20 @@ void RSampler1AudioProcessor::updateFilter()
     }
     stateVariableFilter.state->setCutOffFrequency(lastSampleRate, *valueTree.getRawParameterValue("CUTOFF"), *valueTree.getRawParameterValue("RESO"));
     
+}
+void RSampler1AudioProcessor::updateReverb()
+{
+    //get reverb size from GUI
+    //get on or off
+    //reverbParams.
+    reverbParams.damping = 0.5f;
+    reverbParams.freezeMode = 0.0f;
+    reverbParams.dryLevel = *valueTree.getRawParameterValue("REVERBDRY");
+    reverbParams.wetLevel = *valueTree.getRawParameterValue("REVERBWET");
+    reverbParams.roomSize = *valueTree.getRawParameterValue("REVERBSIZE");
+    reverbParams.width = *valueTree.getRawParameterValue("REVERBWIDTH");
+
+    reverb.setParameters(reverbParams);
 }
 void RSampler1AudioProcessor::releaseResources()
 {
@@ -182,6 +201,7 @@ void RSampler1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     {
         if (auto sound = dynamic_cast<juce::SamplerSound*>(rSampler.getSound(i).get()))
         {
+            //add to updateADSR method
             ADSRParams.attack = *valueTree.getRawParameterValue("ATTACK");
             ADSRParams.decay = *valueTree.getRawParameterValue("DECAY");
             ADSRParams.sustain = *valueTree.getRawParameterValue("SUSTAIN");
@@ -198,8 +218,15 @@ void RSampler1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     juce::dsp::AudioBlock<float> block(buffer);
 
     updateFilter();
-
     stateVariableFilter.process(juce::dsp::ProcessContextReplacing<float>(block));
+    
+    updateReverb(); 
+
+    if (getNumOutputChannels() == 1)
+        reverb.processMono(buffer.getWritePointer(0), buffer.getNumSamples());
+
+    else if (getNumOutputChannels() == 2)
+        reverb.processStereo(buffer.getWritePointer(0), buffer.getWritePointer(1), buffer.getNumSamples());
 
     for (int channel = 0; channel < totalNumOutputChannels; ++channel)
     {
@@ -269,7 +296,7 @@ void RSampler1AudioProcessor::loadFileDragDrop(const juce::String& path)
     int sampleLength = static_cast<int>(rFormatReader->lengthInSamples);
 
     waveform.setSize(1, sampleLength);
-    rFormatReader->read(&waveform, 0, sampleLength, 0, true, false); //gives file in buffer , destinination buffer start from begining, lenght in sample, reader buffer start, take only one channel
+    rFormatReader->read(&waveform, 0, sampleLength, 0, true, false); //gives file in buffer , destinination buffer start from begining, length in sample, reader buffer start, take only one channel
 
     auto buffer = waveform.getReadPointer(0);
 
@@ -295,6 +322,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout RSampler1AudioProcessor::cre
     params.push_back(std::make_unique<juce::AudioParameterFloat>("CUTOFF", "Cutoff", juce::NormalisableRange<float>(20.0f, 20000.0f), 5000.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("RESO", "Resonance", juce::NormalisableRange<float>(0.1f, 10.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("FCHOICE", "FilterChoice", juce::NormalisableRange<float>(0, 2), 0));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("REVERBWET", "ReverbWet", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("REVERBDRY", "ReverbDry", juce::NormalisableRange<float>(0.0f, 1.0f), 1.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("REVERBSIZE", "ReverbSize", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("REVERBWIDTH", "ReverbWidth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
     return{ params.begin(), params.end() }; //returns parameters list
 }
 //==============================================================================

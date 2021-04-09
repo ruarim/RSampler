@@ -13,6 +13,7 @@
 #include "Envelope.h"
 #include "Gain.h"
 #include "Filter.h"
+#include "Reverb.h"
 
 //==============================================================================
 /**
@@ -36,11 +37,11 @@ private:
     Envelope envGUI;
     Gain gainGUI;
     Filter filterGUI;
+    Reverb reverbGUI;
 
     juce::TextButton sample1Button{ "LOAD SAMPLE" };
 
     std::vector<float> audioPoints;
-    bool paintWaveform = false;
     // This reference is provided as a quick way for the editor to
     // access the processor object that created it.
     RSampler1AudioProcessor& audioProcessor;

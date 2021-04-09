@@ -11,18 +11,14 @@
 
 //==============================================================================
 RSampler1AudioProcessorEditor::RSampler1AudioProcessorEditor (RSampler1AudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p), envGUI(p), gainGUI(p), filterGUI(p)
+    : AudioProcessorEditor (&p), audioProcessor (p), envGUI(p), gainGUI(p), filterGUI(p), reverbGUI(p)
 {
     addAndMakeVisible(&envGUI);
     addAndMakeVisible(&gainGUI);
-    addAndMakeVisible(&filterGUI);
+    addAndMakeVisible(&filterGUI); 
+    addAndMakeVisible(&reverbGUI);
 
-    //try catch!! 
-    
-    //sample1Button.onClick = [&]() { audioProcessor.loadFile(); };  //c
-    //addAndMakeVisible(sample1Button);
-
-    setSize(420, 300);
+    setSize(400, 460);
 }
 
 RSampler1AudioProcessorEditor::~RSampler1AudioProcessorEditor()
@@ -35,31 +31,38 @@ void RSampler1AudioProcessorEditor::paint (juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
-    if (paintWaveform)
-    {
+    auto waveform = audioProcessor.getWaveform();
+    if (waveform.getNumChannels() == 1) //if sample is loaded 
+    { //paint waveform
         g.setColour(juce::Colours::white);
         g.strokePath(displayWaveform(), juce::PathStrokeType(2));
 
-        paintWaveform = false;
+    }
+    else
+    {
+        //const juce::String text = "Drag and drop sample.";
+        g.setColour(juce::Colours::white);
+        //g.drawText(&text, width, height, juce::Justification::centred, false);
+        g.drawRoundedRectangle(10.0f, 10.0f, 380.0f, 100.0f, 5.0f, 1.0f);
     }
 }
 
 void RSampler1AudioProcessorEditor::resized()
 {   
     //lay out components
-    envGUI.setBounds(0, getHeight() / 2, 400, 150);
-    gainGUI.setBounds(getWidth() / 2 + 90, getHeight() / 2, 100, 150);
-    filterGUI.setBounds(getWidth() / 2 - 30, getHeight() / 2, 130, 150);
+    envGUI.setBounds(0, 125, 400, 150);
+    gainGUI.setBounds(getWidth() / 2 + 110, 125, 100, 150);
+    filterGUI.setBounds(getWidth() / 2 - 10, 125, 130, 150);
+    reverbGUI.setBounds(10, 275, 400, 300);
 
-    sample1Button.setBounds(10, 10, 400, 100); //c
 }
 
 bool RSampler1AudioProcessorEditor::isInterestedInFileDrag(const juce::StringArray& files)
 {
-    //check corrected file tpy 
+    //check if dropped file is valid type 
     for (auto file : files)
     {
-        if (file.contains(".wav") || file.contains(".mp3"))
+        if (file.contains(".wav") || file.contains(".mp3") || file.contains(".aif"))
         {
             return true;
         }
@@ -72,10 +75,9 @@ void RSampler1AudioProcessorEditor::filesDropped(const juce::StringArray& files,
     
     for (auto file : files)
     {
-           //file relevant load to in processor
+           //if file valid, load in processor
         if (isInterestedInFileDrag(files))
         {
-            paintWaveform = true;
             //load sound
             audioProcessor.loadFileDragDrop(file);
 
@@ -86,25 +88,23 @@ void RSampler1AudioProcessorEditor::filesDropped(const juce::StringArray& files,
 
 juce::Path RSampler1AudioProcessorEditor::displayWaveform()
 {
-    int height = 450;
-    int width = 200;
-    int offset = 45;
+    int width = 400;
+    int height = 125;
     auto waveform = audioProcessor.getWaveform();
-    auto scaleRatio = waveform.getNumSamples() / height; //scale lenght of sample to x axis
+    auto scaleRatio = waveform.getNumSamples() / width; //scale lenght of sample to x axis
     auto buffer = waveform.getReadPointer(0); //
 
     juce::Path p;
     p.clear();
-    
     for (int sample = 0; sample < waveform.getNumSamples(); sample += scaleRatio) 
     {
         audioPoints.push_back(buffer[sample]); 
     }
-    p.startNewSubPath(0, height); //set start point for drawing
+    p.startNewSubPath(-10, width); //set start point for drawing
 
     for (int sample = 0; sample < audioPoints.size(); ++sample)
     {
-        auto point  = juce::jmap<float>(audioPoints[sample], -1, 1.0f, width, 0) - offset; //scales input on y axis, convert -1 to 1 values to fit y axis //offset by 50 to move position on GUI
+        auto point  = juce::jmap<float>(audioPoints[sample], -1, 1.0f, height, 0); //scales input on y axis, convert -1 to 1 values to fit y axis //offset by 50 to move position on GUI
 
         p.lineTo(sample, point);
     }

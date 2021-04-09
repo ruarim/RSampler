@@ -37,7 +37,7 @@ Filter::Filter(RSampler1AudioProcessor& p) :
     resoLabel.setJustificationType(juce::Justification::centred);
     resoLabel.setFont(juce::Font(12.0f, juce::Font::plain));
 
-    cutoffSlider.setSkewFactorFromMidPoint(1000.0f);
+    cutoffSlider.setSkewFactorFromMidPoint(800.0f);
 
     cutoffVal = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.valueTree, "CUTOFF", cutoffSlider);
     resoVal = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.valueTree, "RESO", resoSlider);
