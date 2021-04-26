@@ -147,7 +147,6 @@ void RSampler1AudioProcessor::updateFilter()
 void RSampler1AudioProcessor::updateReverb()
 {
     //get reverb size from GUI
-    //get on or off
     //reverbParams.
     reverbParams.damping = 0.5f;
     reverbParams.freezeMode = 0.0f;
@@ -216,7 +215,6 @@ void RSampler1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     rSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
     juce::dsp::AudioBlock<float> block(buffer);
-
     updateFilter();
     stateVariableFilter.process(juce::dsp::ProcessContextReplacing<float>(block));
     
@@ -228,12 +226,14 @@ void RSampler1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     else if (getNumOutputChannels() == 2)
         reverb.processStereo(buffer.getWritePointer(0), buffer.getWritePointer(1), buffer.getNumSamples());
 
+    //buffer.applyGain(*valueTree.getRawParameterValue("GAIN"));
+
     for (int channel = 0; channel < totalNumOutputChannels; ++channel)
     {
         auto* channelData = buffer.getWritePointer(channel);
         for(int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            channelData[sample] = channelData[sample] * *valueTree.getRawParameterValue("GAIN");
+            channelData[sample] = (2.0f / juce::float_Pi) * atan(channelData[sample] * *valueTree.getRawParameterValue("GAIN")); //apply distortion with waveshaper
         }
     }
 
@@ -298,9 +298,6 @@ void RSampler1AudioProcessor::loadFileDragDrop(const juce::String& path)
     waveform.setSize(1, sampleLength);
     rFormatReader->read(&waveform, 0, sampleLength, 0, true, false); //gives file in buffer , destinination buffer start from begining, length in sample, reader buffer start, take only one channel
 
-    auto buffer = waveform.getReadPointer(0);
-
-    //check waveform has content
 
     juce::BigInteger range;
 
@@ -318,7 +315,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout RSampler1AudioProcessor::cre
     params.push_back(std::make_unique<juce::AudioParameterFloat>("DECAY", "Decay", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("SUSTAIN", "Sustain", juce::NormalisableRange<float>(0.0f, 5.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("RELEASE", "Release", juce::NormalisableRange<float>(0.0f, 5.0f), 0.5f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", juce::NormalisableRange<float>(0.0f, 5.0f), 1.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("CUTOFF", "Cutoff", juce::NormalisableRange<float>(20.0f, 20000.0f), 5000.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("RESO", "Resonance", juce::NormalisableRange<float>(0.1f, 10.0f), 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("FCHOICE", "FilterChoice", juce::NormalisableRange<float>(0, 2), 0));

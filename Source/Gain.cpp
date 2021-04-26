@@ -13,8 +13,8 @@ Gain::Gain(RSampler1AudioProcessor& p) :
     processor(p)
 {
     gainSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
-    gainSlider.setRange(0.1f, 1.0f);
-    gainSlider.setValue(0.1f);
+    gainSlider.setRange(0.0f, 5.0f);
+    gainSlider.setValue(1.0f);
     gainSlider.setTextBoxStyle(juce::Slider::NoTextBox, true, 0, 0);
     addAndMakeVisible(&gainSlider);
     addAndMakeVisible(&gainLabel);

@@ -63,7 +63,7 @@ public:
 
 private:
     juce::Synthesiser rSampler;
-    const int rVoices = 4;
+    const int rVoices = 8;
     
 
     juce::AudioFormatManager rFormatManager;
@@ -72,8 +72,8 @@ private:
     double lastSampleRate;
     //use process duplcator to use mono dsp effect on both channels
     juce::dsp::ProcessorDuplicator<juce::dsp::StateVariableFilter::Filter<float>, juce::dsp::StateVariableFilter::Parameters<float>> stateVariableFilter;
+    
     juce::Reverb reverb;
-
     juce::Reverb::Parameters reverbParams;
     juce::ADSR::Parameters ADSRParams;
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
