@@ -1,2 +1,2 @@
 # RSampler
- A sampler with the juce framework
+ A sampler with the JUCE framework
